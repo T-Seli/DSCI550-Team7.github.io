@@ -1,0 +1,160 @@
+@font-face {
+    font-family: 'National';
+    src: local('National'), local('National-Regular'),
+         url('//www.usc.edu/assets/fonts/NationalWeb-Regular.eot?#iefix') format('embedded-opentype'),
+         url('//www.usc.edu/assets/fonts/NationalWeb-Regular.woff') format('woff'),
+         url('//www.usc.edu/assets/fonts/NationalWeb-Regular.ttf') format('truetype'),
+         url('//www.usc.edu/assets/fonts/NationalWeb-Regular.svg#National') format('svg');
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* Root CSS Variables */
+:root {
+    --primary-color: #990000; /* Red color */
+    --hover-color: #cc0000; /* Darker red for hover */
+    --button-text-color: #fff; /* White text */
+    --highlight-color: #FFD700; /* Golden yellow */
+}
+
+body {
+    overflow-y: scroll;
+}
+
+/* Navbar Customization */
+.navbar .navbar-nav {
+    > li > a {
+        color: var(--button-text-color); /* Ensure text is white */
+        &:hover, &:focus {
+            color: var(--highlight-color); /* Golden yellow on hover */
+            background-color: transparent; /* No background change on hover */
+        }
+    }
+    .btn-default {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        &:hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+        &:focus, &.focus {
+            background-color: transparent;
+            border-color: #fff;
+        }
+    }
+}
+
+.navbar-collapse {
+    background: var(--primary-color);
+}
+
+.nav-ul-second {
+    margin-left: 134px;
+    > li > a {
+        padding-top: 12px;
+        padding-bottom: 2px !important;
+    }
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #fff;
+    border: none;
+    &:hover {
+        background-color: var(--highlight-color);
+    }
+}
+
+#nav-secondary {
+    margin-top: 50px;
+    max-height: 50px;
+    height: 64px;
+    background-color: #000;
+}
+
+#info .btn {
+    background-color: var(--primary-color);
+    color: var(--button-text-color);
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    margin: 10px auto 0;
+    display: block;
+    max-width: 200px;
+}
+
+#info .btn:hover {
+    background-color: var(--hover-color);
+    color: var(--highlight-color);
+}
+
+/* Other classes */
+.vertical-center {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+.media-object {
+    max-width: 64px;
+    max-height: 64px;
+}
+
+.media-body {
+    text-align: left;
+}
+
+#intro .title, #info .title {
+    font-size: 70px;
+    margin-top: 4.5cm;
+    color: var(--primary-color);
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+}
+
+.thumbnail {
+    h3 {
+        padding-top: 3mm;
+    }
+    img {
+        height: 200px;
+        width: 400px;
+    }
+    &.sce-viz, &.eval-viz {
+        height: 30%;
+    }
+}
+
+#about .stylish-panel {
+    padding: 20px 0;
+    text-align: center;
+    > div > div {
+        padding: 10px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+        &:hover {
+            margin-top: -10px;
+            border: 1px solid rgb(200, 200, 200);
+            box-shadow: rgba(0, 0, 0, 0.1) 0px 5px 5px 2px;
+            background: rgba(200, 200, 200, 0.1);
+            img {
+                border-radius: 50%;
+                transform: rotate(360deg);
+                transition: transform 0.5s;
+            }
+        }
+    }
+}
+
+#learn-more .panel .panel-body {
+    min-height: 280px;
+}
+
+#irdsgroup {
+    color: white;
+    text-decoration: none;
+    &:hover {
+        color: var(--highlight-color);
+    }
+}

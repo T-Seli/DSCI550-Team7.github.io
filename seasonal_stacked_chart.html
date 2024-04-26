@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Tabs</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        svg {
+            width: 80vw;
+            height: 70vh;
+            display: block; /* Centers the svg horizontally */
+        }
+        .axis-label {
+            font-size: 12px;
+            font-family: sans-serif;
+        }
+        .chart-title {
+            font-size: 16px;
+            font-family: sans-serif;
+            text-anchor: middle;
+        }
+        .legend {
+            font-family: sans-serif;
+            font-size: 12px;
+            text-anchor: start;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 120px;
+            height: 50px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+        }
+</style>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<body>
+    <svg></svg>
+    <div class="tooltip"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            initializeGraph();
+            window.addEventListener('resize', initializeGraph);
+        });
+
+        async function initializeGraph() {
+            const svgElement = d3.select("svg");
+            svgElement.selectAll("*").remove(); // Clear previous SVG content
+
+            const svgBounds = svgElement.node().getBoundingClientRect();
+            const margin = {top: 50, right: 100, bottom: 60, left: 80};
+            const width = svgBounds.width - margin.left - margin.right;
+            const height = svgBounds.height - margin.top - margin.bottom;
+
+            const svg = svgElement
+                .attr("width", svgBounds.width)
+                .attr("height", svgBounds.height)
+                .append("g")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+            // Add title
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", -20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "24px")
+                .text("Bigfoot's Calendar: Mapping the Seasons of Encounters");
+
+
+            const response = await fetch('assets/data/sightings_by_season.json');
+            const rawData = await response.json();
+
+            const data = rawData.map(entry => ({
+                year: +entry.Year,
+                Fall: +entry.Fall,
+                Spring: +entry.Spring,
+                Summer: +entry.Summer,
+                Winter: +entry.Winter
+            }));
+
+            const seasons = ["Fall", "Spring", "Summer", "Winter"];
+            const x = d3.scaleLinear()
+                .domain(d3.extent(data, d => d.year))
+                .range([0, width]);
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.Fall + d.Spring + d.Summer + d.Winter)])
+                .range([height, 0]);
+            const color = d3.scaleOrdinal(d3.schemeCategory10).domain(seasons);
+            const area = d3.area()
+                .x(d => x(d.data.year))
+                .y0(d => y(d[0]))
+                .y1(d => y(d[1]));
+            const stack = d3.stack()
+                .keys(seasons)
+                .order(d3.stackOrderNone)
+                .offset(d3.stackOffsetNone);
+
+            const layers = stack(data);
+
+            const tooltip = d3.select(".tooltip");
+
+            svg.selectAll(".layer")
+                .data(layers)
+                .enter().append("path")
+                .attr("class", "layer")
+                .attr("d", area)
+                .style("fill", d => color(d.key))
+                .on("mouseover", function(event, d) {
+                    const [xPosition, yPosition] = d3.pointer(event, this);
+                    const year = Math.round(x.invert(xPosition));
+                    const yearData = data.find(dat => dat.year === year);
+                    tooltip.style("opacity", 1);
+                    tooltip.html(`Year: ${year}<br>Season: ${d.key}<br>Sightings: ${yearData[d.key]}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+
+            // Append X axis and move the label if necessary
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d3.format("d")))
+                .append("text")
+                .attr("class", "axis-label")
+                .attr("y", 50) // Positive value moves the label down
+                .attr("x", width / 2)
+                .attr("text-anchor", "middle")
+                .style("fill", "black") // Make sure the text is visible
+                .text("Year");
+
+            // Append Y axis and move the label if necessary
+            svg.append("g")
+                .call(d3.axisLeft(y))
+                .append("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -70) // Negative value moves the label left when rotated
+                .attr("x", -height / 2)
+                .attr("text-anchor", "middle")
+                .style("fill", "black") // Ensure the text is visible
+                .text("Sightings");
+
+        }
+    </script>
+</body>
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add click event to sub-nav links to toggle 'active' class
+        $(document).ready(function() {
+            $('.nav a').on('click', function(){
+                $('.nav').find('.active').removeClass('active');
+                $(this).parent().addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>

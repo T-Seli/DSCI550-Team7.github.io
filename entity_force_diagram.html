@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Tabs</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .node {
+            cursor: pointer;
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+        .node:hover {
+            stroke: #333;
+            stroke-width: 3px;
+        }
+        .link {
+            stroke: #bbb;
+            stroke-opacity: 0.6;
+        }
+        .label {
+            pointer-events: none;
+            font-family: Arial, sans-serif;
+            text-anchor: middle;
+            font-size: 12px;
+            fill: #333;
+            stroke-width: 0.5px;
+            paint-order: stroke fill;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+        #tooltip {
+            position: absolute;
+            text-align: center;
+            width: auto;
+            max-width: 160px;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<body>
+   <svg id="forceDirectedGraph" width="960" height="500"></svg>
+    <script>
+    async function initializeGraph() {
+        const response = await fetch('assets/data/entitydata.json');
+        const data = await response.json();
+
+        const nodesMap = new Map();
+        const linksMap = new Map();
+
+        data.forEach(array => {
+            array.forEach(item => {
+                nodesMap.set(item, (nodesMap.get(item) || 0) + 1);
+            });
+        });
+
+        const nodes = Array.from(nodesMap)
+            .map(([id, count]) => ({id, count}))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 400);
+
+        const nodeIds = new Set(nodes.map(n => n.id));
+        data.forEach(array => {
+            let uniqueItems = Array.from(new Set(array));
+            for (let i = 0; i < uniqueItems.length; i++) {
+                for (let j = i + 1; j < uniqueItems.length; j++) {
+                    let key = uniqueItems[i] < uniqueItems[j] ? `${uniqueItems[i]}-${uniqueItems[j]}` : `${uniqueItems[j]}-${uniqueItems[i]}`;
+                    if (nodeIds.has(uniqueItems[i]) && nodeIds.has(uniqueItems[j])) {
+                        linksMap.set(key, (linksMap.get(key) || {source: uniqueItems[i], target: uniqueItems[j], value: 0}));
+                        linksMap.get(key).value += 1;
+                    }
+                }
+            }
+        });
+
+        const links = Array.from(linksMap.values());
+        const width = window.innerWidth, height = window.innerHeight;
+        const svg = d3.select("#forceDirectedGraph")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .call(d3.zoom().on("zoom", function (event) {
+                container.attr("transform", event.transform);
+            }));
+
+        const container = svg.append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        const colorScale = d3.scaleLog()
+            .domain([10, 50, d3.max(nodes, d => d.count)])
+            .range(["#FFCC00", "#E56E6E", "#990000"]);
+
+        nodes.forEach(node => {
+            node.color = colorScale(node.count);
+        });
+
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(d => 100 + 300 / Math.sqrt(d.value)).strength(0.1))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(0, 0))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY())
+            .force("collide", d3.forceCollide().radius(d => 15 + Math.sqrt(d.count)));
+
+        const link = container.append("g")
+            .selectAll("line")
+            .data(links)
+            .join("line")
+            .attr("stroke-width", d => Math.sqrt(d.value) * 2);
+
+        const node = container.append("g")
+            .selectAll("circle")
+            .data(nodes)
+            .join("circle")
+            .attr("r", d => 5 + Math.sqrt(d.count) * 2)
+            .attr("fill", d => d.color)
+            .on("mouseover", mouseover)
+            .on("mousemove", mousemove)
+            .on("mouseout", mouseout)
+            .call(drag(simulation));
+
+        const label = container.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .join("text")
+            .attr("class", "label")
+            .text(d => d.id);
+
+        const tooltip = d3.select("body").append("div")
+            .attr("id", "tooltip")
+            .style("opacity", 0);
+
+        function mouseover(event, d) {
+            tooltip.transition()
+                   .duration(200)
+                   .style("opacity", .9);
+            tooltip.html("Entity: " + d.id + "<br/>Frequency: " + d.count)
+                   .style("left", (event.pageX + 10) + "px")
+                   .style("top", (event.pageY - 10) + "px");
+        }
+
+        function mousemove(event, d) {
+            tooltip.style("left", (event.pageX + 10) + "px")
+                   .style("top", (event.pageY - 10) + "px");
+        }
+
+        function mouseout(event, d) {
+            tooltip.transition()
+                   .duration(500)
+                   .style("opacity", 0);
+        }
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            label.attr("x", d => d.x)
+                 .attr("y", d => d.y + 5);
+        });
+    }
+
+    initializeGraph();
+    </script>
+</body>
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add click event to sub-nav links to toggle 'active' class
+        $(document).ready(function() {
+            $('.nav a').on('click', function(){
+                $('.nav').find('.active').removeClass('active');
+                $(this).parent().addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>

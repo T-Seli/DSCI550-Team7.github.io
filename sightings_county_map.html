@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bigfoot Sightings Map</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        header {
+            padding-top: 90px; /* Added padding to accommodate fixed navbar */
+        }
+        #map-container {
+            width: 100%; /* Use full width of the parent column */
+            position: relative; /* Maintain relative positioning */
+        }
+
+        .legend {
+            /* Remove absolute positioning and adjust padding and margin as needed */
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        }
+        .legend-title {
+            font-weight: bold; /* Add font weight to legend title */
+            margin-bottom: 10px; /* Add bottom margin to legend title */
+        }
+        .legend-scale {
+            margin-bottom: 5px; /* Add bottom margin to legend scale */
+        }
+        .legend-scale-color {
+            width: 20px; /* Adjust width of color scale */
+            height: 20px; /* Adjust height of color scale */
+            display: inline-block;
+            margin-right: 5px; /* Adjust margin as needed */
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 style="text-align: center; font-size: 18px;">Bigfoot's Top Hangouts: Mapping the Hottest Sasquatch Spots</h2>
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2" id="map-container-wrapper">
+                    <div id="map-container"></div>
+                </div>
+                <div class="col-md-2" id="legend-wrapper">
+                    <div class="legend">
+                        <div class="legend-title">Number of Sightings</div>
+                        <div class="legend-scale">
+                            <div class="legend-scale-color" style="background-color: #f7f7f7;"></div>
+                            <div class="legend-label">0</div>
+                            <div class="legend-scale-color" style="background-color: #dadaeb;"></div>
+                            <div class="legend-label">1-3</div>
+                            <div class="legend-scale-color" style="background-color: #bcbddc;"></div>
+                            <div class="legend-label">4-8</div>
+                            <div class="legend-scale-color" style="background-color: #9e9ac8;"></div>
+                            <div class="legend-label">9-15</div>
+                            <div class="legend-scale-color" style="background-color: #807dba;"></div>
+                            <div class="legend-label">16-31</div>
+                            <div class="legend-scale-color" style="background-color: #6a51a3;"></div>
+                            <div class="legend-label">32-63</div>
+                            <div class="legend-scale-color" style="background-color: #54278f;"></div>
+                            <div class="legend-label">64-76</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+         async function drawMap() {
+            const svg = d3.select('#map-container').append('svg')
+                .attr('viewBox', '0 0 975 610');
+            const tooltip = d3.select("body").append("div")
+                .attr("id", "tooltip")
+                .style("position", "absolute")
+                .style("opacity", 0)
+                .style("background-color", "lightsteelblue")
+                .style("border", "0px")
+                .style("border-radius", "8px")
+                .style("padding", "8px")
+                .style("font", "12px sans-serif")
+                .style("pointer-events", "none");
+
+            try {
+                const us = await d3.json('assets/data/counties-albers-10m.json');
+                const sightingsData = await d3.json('assets/data/sightings_by_county.json');
+                const path = d3.geoPath();
+
+                const colorScale = d3.scaleThreshold()
+                    .domain([0, 1, 4, 8, 16, 32, 64, 76])
+                    .range(['#f7f7f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']);
+
+                const counties = topojson.feature(us, us.objects.counties);
+                const states = topojson.mesh(us, us.objects.states, (a, b) => a !== b);
+                const normalizeId = id => String(id).padStart(5, '0');
+
+                svg.append('path')
+                    .datum(states)
+                    .attr('class', 'states')
+                    .attr('d', path)
+                    .attr('stroke', '#333') // Add state border color
+                    .attr('stroke-width', '1px'); // Adjust state border width as needed
+
+                svg.append('g')
+                    .selectAll('path')
+                    .data(counties.features)
+                    .enter().append('path')
+                    .attr('class', 'counties')
+                    .attr('d', path)
+                    .attr('fill', d => {
+                        const sighting = sightingsData.find(s => normalizeId(s.id) === normalizeId(d.id));
+                        return sighting ? colorScale(sighting.Sightings) : '#ffffff';
+                    })
+                    .attr('stroke', '#ccc') // Add county border color
+                    .attr('stroke-width', '0.5px') // Adjust county border width as needed
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html(`County: ${d.properties.name}<br/>Sightings: ${sightingsData.find(s => normalizeId(s.id) === normalizeId(d.id))?.Sightings || 0}`)
+                            .style("left", (event.pageX) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+            } catch (error) {
+                console.error("Error loading data or drawing the map:", error);
+            }
+        }
+        drawMap()
+    </script>
+</body>
+</html>

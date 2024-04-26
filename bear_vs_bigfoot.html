@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Tabs</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v2.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<body>
+    <svg width="100%" height="600"></svg> <!-- Adjusted SVG height and width -->
+    <script>
+async function initializeGraph() {
+    var projection = d3.geoMercator()
+        .center([-110, 30])
+        .scale(300)
+        .translate([window.innerWidth / 2, 450]); // Centering the map horizontally and vertically
+
+    var path = d3.geoPath()
+        .projection(projection);
+
+    // Load and display the map of North America
+    d3.json("https://unpkg.com/us-atlas/states-10m.json").then(function(us) {
+        const svg = d3.select("svg");
+
+        // Add paper-like texture background
+        svg.append("defs").append("pattern")
+            .attr("id", "paper-texture")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .append("image")
+            .attr("xlink:href", "assets/images/map_background.jpg") // Provide the path to your paper texture image
+            .attr("width", "100%")
+            .attr("height", "100%");
+
+        svg.append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .style("fill", "url(#paper-texture)");
+
+        // Title
+        svg.append("text")
+            .attr("x", "50%") // Centering the title horizontally
+            .attr("y", 40) // Top margin
+            .attr("text-anchor", "middle") // Center the text
+            .style("font-size", "24px") // Font size
+            .style("font-family", "Arial, Helvetica, sans-serif") // Font style
+            .text("Wild Encounters: Mapping Bigfoot Sightings Against Bear Attacks");
+
+        svg.append("g")
+            .selectAll("path")
+            .data(topojson.feature(us, us.objects.states).features)
+            .enter().append("path")
+            .attr("fill", "#444444")
+            .attr("d", path);
+
+        d3.json("assets/data/location_info.json").then(function(data) {
+            const filteredData = data.filter(d =>
+                d.Latitude <= 71 && d.Latitude >= 5 &&
+                d.Longitude <= -52 && d.Longitude >= -169 &&
+                projection([d.Longitude, d.Latitude]) != null);
+
+            const color = d3.scaleOrdinal()
+                .domain(["Bear", "Bigfoot"])
+                .range(["#FF0000", "#33C4FF"]);
+
+            const bigfootData = filteredData.filter(d => d.Type === "Bigfoot");
+            const bearData = filteredData.filter(d => d.Type === "Bear");
+
+            // Plot Bigfoot sightings
+            svg.append("g")
+                .selectAll("circle")
+                .data(bigfootData)
+                .enter().append("circle")
+                .attr("cx", d => projection([d.Longitude, d.Latitude])[0])
+                .attr("cy", d => projection([d.Longitude, d.Latitude])[1])
+                .attr("r", 3) // Fixed radius
+                .style("fill", "#33C4FF")
+                .style("opacity", 0.75);
+
+            // Plot bear attacks as dots
+            svg.append("g")
+                .selectAll("circle")
+                .data(bearData)
+                .enter().append("circle")
+                .attr("cx", d => projection([d.Longitude, d.Latitude])[0])
+                .attr("cy", d => projection([d.Longitude, d.Latitude])[1])
+                .attr("r", 5)
+                .style("fill", d => color(d.Type))
+                .style("stroke", "#000")
+                .style("stroke-width", 1);
+        });
+    });
+}
+initializeGraph();
+
+
+    </script>
+</body>
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add click event to sub-nav links to toggle 'active' class
+        $(document).ready(function() {
+            $('.nav a').on('click', function(){
+                $('.nav').find('.active').removeClass('active');
+                $(this).parent().addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>

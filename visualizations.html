@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Tabs</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 style="font-size: 48px; font-weight: bold; text-align: center; margin-bottom: 20px; color: #990000;">Explore Bigfoot Visualizations</h1>
+                <img src="assets/images/Bigfoot_Images.png" alt="Descriptive Alt Text" class="img-responsive">
+            </div>
+        </div>
+    </div>
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add click event to sub-nav links to toggle 'active' class
+        $(document).ready(function() {
+            $('.nav a').on('click', function(){
+                $('.nav').find('.active').removeClass('active');
+                $(this).parent().addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Tabs</title>
+    <!-- Bootstrap Core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/styles.css" rel="stylesheet">
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+        <style>
+        .bar { fill: steelblue; }
+        .bar:hover { fill: orange; }
+        text { font: 10px sans-serif; }
+        .axis path,
+        .axis line { fill: none; stroke: #000; shape-rendering: crispEdges; }
+        .legend {
+            font-size: 12px;
+        }
+        .legend rect {
+            stroke-width: 2;
+        }
+        #graph-container {
+            text-align: center;
+            margin: 0 auto;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 120px;
+            height: auto;
+            padding: 8px;
+            font: 12px sans-serif;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <!-- Navbar Header -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav navbar-custom">
+                    <li><a class="page-scroll" href="landing_page.html#page-top">Home</a></li>
+                    <li><a class="page-scroll" href="landing_page.html#about">About</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="http://usc.edu">
+                        <img src="assets/images/usc-primary-logotype.svg" alt="USC Logo" style="width: 176px; height: 38px;">
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sub-Navigation for Visualizations -->
+    <nav class="navbar navbar-default" style="margin-top: 70px;"> <!-- Adjusted for visibility under fixed top navbar -->
+        <div class="container">
+            <div id="navbar-visuals" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="sightings_county_map.html">Sightings Map</a></li>
+                    <li><a href="seasonal_stacked_chart.html">Temporal Season Plot</a></li>
+                    <li><a href="entity_force_diagram.html">Entity Force Graph</a></li>
+                    <li><a href="bear_vs_bigfoot.html">Bear Attack Map</a></li>
+                    <li><a href="water_vs_sightings.html">Water Quality Barchart</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="graph-container">
+        <h2>Exploring the Relationship Between Bigfoot Sightings and Water Quality by State</h2>
+        <svg width="960" height="500"></svg>
+    </div>
+    
+    <script>
+            document.addEventListener("DOMContentLoaded", function() {
+        d3.json("assets/data/water_sightings.json").then(function(data) {
+            const svg = d3.select("svg"),
+                margin = {top: 20, right: 20, bottom: 30, left: 40},
+                width = +svg.attr("width") - margin.left - margin.right,
+                height = +svg.attr("height") - margin.top - margin.bottom,
+                g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x0 = d3.scaleBand()
+                .rangeRound([0, width])
+                .paddingInner(0.1);
+
+            const x1 = d3.scaleBand()
+                .padding(0.05);
+
+            const y = d3.scaleLinear()
+                .rangeRound([height, 0]);
+
+            const y1 = d3.scaleLinear()
+                .rangeRound([height, 0]);
+
+            const z = d3.scaleOrdinal()
+                .range(["#0571b0", "#ca0020"])  // Red for water quality, Blue for Bigfoot Sightings
+                .domain(["Average_Water_Quality", "Bigfoot_Sightings"]);
+
+            const keys = ["Average_Water_Quality", "Bigfoot_Sightings"];
+
+            x0.domain(data.map(d => d.State));
+            x1.domain(keys).rangeRound([0, x0.bandwidth()]);
+            y.domain([0, d3.max(data, d => Math.max(d.Bigfoot_Sightings))]);
+            y1.domain([0, d3.max(data, d => Math.max(d.Average_Water_Quality))]);
+
+            g.append("g")
+                .selectAll("g")
+                .data(data)
+                .enter().append("g")
+                    .attr("transform", d => `translate(${x0(d.State)},0)`)
+                .selectAll("rect")
+                .data(d => keys.map(key => ({key: key, value: d[key], state: d.State})))
+                .enter().append("rect")
+                    .attr("x", d => x1(d.key))
+                    .attr("y", d => d.key === "Average_Water_Quality" ? y1(d.value) : y(d.value))
+                    .attr("width", x1.bandwidth())
+                    .attr("height", d => height - (d.key === "Average_Water_Quality" ? y1(d.value) : y(d.value)))
+                    .attr("fill", d => z(d.key))
+                    .on("mouseover", function(event, d) {
+                        const [x, y] = d3.pointer(event, this); // Get mouse coordinates relative to the current element
+                        const tooltipText = d.key === "Average_Water_Quality" ? `State: ${d.state}, Water Quality: ${d.value}` : `State: ${d.state}, Sightings: ${d.value}`;
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html(tooltipText)
+                            .style("left", (event.pageX + 10) + "px") // Adjust left position by adding an offset
+                            .style("top", (event.pageY - 28) + "px"); // Adjust top position by subtracting an offset
+                    })
+                    .on("mouseout", function(d) {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+
+            // Draw the axis
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x0));
+
+            g.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(y).ticks(null, "s"))
+                .append("text")
+                .attr("x", 2)
+                .attr("y", y(y.ticks().pop()) + 0.5)
+                .attr("dy", "0.32em")
+                .attr("fill", "#000")
+                .attr("font-weight", "bold")
+                .attr("text-anchor", "start")
+                .text("Number of Events");
+
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(${width},0)`) // Move this axis to the right side of the chart
+                .call(d3.axisRight(y1).ticks(null, "s"))
+                .append("text")
+                .attr("x", -2)
+                .attr("y", y1(y1.ticks().pop()) + 0.5)
+                .attr("dy", "0.32em")
+                .attr("fill", "#000")
+                .attr("font-weight", "bold")
+                .attr("text-anchor", "end")
+                .text("Water Quality");
+
+            // Create the legend
+            const legend = svg.append("g")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+                .attr("text-anchor", "end")
+                .selectAll("g")
+                .data(keys.slice().reverse())
+                .enter().append("g")
+                .attr("transform", (d, i) => `translate(-50,${i * 20})`)
+                .attr("class", "legend");
+
+            legend.append("rect")
+                .attr("x", width - 19)
+                .attr("width", 19)
+                .attr("height", 19)
+                .attr("fill", z);
+
+            legend.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9.5)
+                .attr("dy", "0.32em")
+                .text(d => d);
+
+            // Tooltip
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+        }).catch(function(error) {
+            console.error("Failed to load data:", error);
+        });
+    });
+
+    </script>
+
+    <footer style="margin-top: 50px;"> <!-- Add margin-top here -->
+        <div class="container">
+            <p>Team Members: Thomas Seli, Sam Habibi, Sana Jayaswal, Aman Sharma, Karthik Srinivasan</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add click event to sub-nav links to toggle 'active' class
+        $(document).ready(function() {
+            $('.nav a').on('click', function(){
+                $('.nav').find('.active').removeClass('active');
+                $(this).parent().addClass('active');
+            });
+        });
+    </script>
+</body>
+</html>
