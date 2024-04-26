@@ -141,6 +141,47 @@ async function initializeGraph() {
                 .style("fill", d => color(d.Type))
                 .style("stroke", "#000")
                 .style("stroke-width", 1);
+            
+            // Define legend
+            const legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", "translate(20, 50)") // Adjust position to fit within your visual layout
+                .style("font-family", "Arial")
+                .style("font-size", "12px");
+            
+            // Add legend entries
+            const legendData = [
+                {label: "Bigfoot Sightings", color: "#33C4FF"},
+                {label: "Bear Attacks", color: "#FF0000"}
+            ];
+            
+            legend.selectAll("rect")
+                .data(legendData)
+                .enter()
+                .append("rect")
+                .attr("x", 0)
+                .attr("y", function(d, i) { return i * 24; }) // Spacing the legend entries
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", d => d.color);
+            
+            legend.selectAll("text")
+                .data(legendData)
+                .enter()
+                .append("text")
+                .attr("x", 24) // Align text to be next to the rectangles
+                .attr("y", function(d, i) { return i * 24 + 14; }) // Align text with the boxes
+                .text(d => d.label);
+            
+            // Add a border around the legend (optional)
+            legend.append("rect")
+                .attr("x", -10)
+                .attr("y", -10)
+                .attr("width", 160) // Width of the border rectangle
+                .attr("height", 60) // Adjust the height based on the number of legend entries
+                .style("fill", "none")
+                .style("stroke", "black")
+                .style("stroke-width", 1);
         });
     });
 }
