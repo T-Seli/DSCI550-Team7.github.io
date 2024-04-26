@@ -206,6 +206,28 @@
                 .style("fill", "black") // Ensure the text is visible
                 .text("Sightings");
 
+            // Add legend
+            const legend = svg.append("g")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 12)
+                .attr("text-anchor", "end")
+                .selectAll("g")
+                .data(seasons.slice().reverse())
+                .enter().append("g")
+                .attr("transform", (d, i) => `translate(-50,${i * 20})`);
+            
+            legend.append("rect")
+                .attr("x", width - 19)
+                .attr("width", 19)
+                .attr("height", 19)
+                .attr("fill", color);
+            
+            legend.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9.5)
+                .attr("dy", "0.32em")
+                .text(d => d);
+
         }
     </script>
 </body>
